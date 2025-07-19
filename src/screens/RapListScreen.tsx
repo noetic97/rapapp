@@ -331,6 +331,27 @@ export const RapListScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.actionButtonEmoji}>📝</Text>
         <Text style={styles.actionButtonText}>New Rap</Text>
       </TouchableOpacity>
+
+      {/* Temporary Debug Button */}
+      <TouchableOpacity
+        style={[
+          styles.actionButton,
+          { backgroundColor: colors.warning, flex: 0.5 },
+        ]}
+        onPress={() => {
+          console.log("=== DEBUG INFO ===");
+          console.log("Folders:", folders);
+          console.log("Raps:", raps);
+          console.log("Root folders:", rootFolders);
+          Alert.alert(
+            "Debug Info",
+            `Folders: ${folders.length}\nRaps: ${raps.length}\nRoot Folders: ${rootFolders.length}`,
+            [{ text: "OK" }]
+          );
+        }}
+      >
+        <Text style={styles.actionButtonText}>🐛</Text>
+      </TouchableOpacity>
     </View>
   );
 
