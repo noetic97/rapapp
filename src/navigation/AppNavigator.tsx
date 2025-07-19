@@ -6,6 +6,7 @@ import { Text } from "react-native";
 
 import { RapListScreen } from "@/screens/RapListScreen";
 import { RapEditorScreen } from "@/screens/RapEditorScreen";
+import { FolderScreen } from "@/screens/FolderScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { RootStackParamList, BottomTabParamList } from "@/types/navigation";
 import { colors, typography } from "@/styles";
@@ -65,6 +66,26 @@ export const AppNavigator: React.FC = () => {
         }}
       >
         <Stack.Screen name="Home" component={TabNavigator} />
+        <Stack.Screen
+          name="Folder"
+          component={FolderScreen}
+          options={{
+            cardStyleInterpolator: ({ current, layouts }) => {
+              return {
+                cardStyle: {
+                  transform: [
+                    {
+                      translateX: current.progress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [layouts.screen.width, 0],
+                      }),
+                    },
+                  ],
+                },
+              };
+            },
+          }}
+        />
         <Stack.Screen
           name="RapEditor"
           component={RapEditorScreen}

@@ -21,10 +21,13 @@ interface RapStore {
   updateRap: (rapId: string, updates: Partial<Rap>) => Promise<void>;
   deleteRap: (rapId: string) => Promise<void>;
   getRap: (rapId: string) => Rap | undefined;
+  moveRap: (rapId: string, newFolderId?: string) => Promise<void>;
 
-  // Folder actions (for later)
+  // Folder actions
   createFolder: (name: string, parentId?: string) => Promise<RapFolder>;
   deleteFolder: (folderId: string) => Promise<void>;
+  moveFolder: (folderId: string, newParentId?: string) => Promise<void>;
+  renameFolder: (folderId: string, newName: string) => Promise<void>;
 
   // Utility actions
   clearError: () => void;
@@ -131,6 +134,18 @@ export const useRapStore = create<RapStore>((set, get) => ({
     return get().raps.find((rap) => rap.id === rapId);
   },
 
+  // Move a rap to a different folder
+  moveRap: async (rapId: string, newFolderId?: string) => {
+    try {
+      await get().updateRap(rapId, { folderId: newFolderId });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to move rap",
+      });
+      throw error;
+    }
+  },
+
   // Create a new folder
   createFolder: async (name: string, parentId) => {
     const now = new Date();
@@ -169,6 +184,82 @@ export const useRapStore = create<RapStore>((set, get) => ({
       set({
         error:
           error instanceof Error ? error.message : "Failed to delete folder",
+      });
+      throw error;
+    }
+  },
+
+  // Move a folder to a different parent
+  moveFolder: async (folderId: string, newParentId?: string) => {
+    const { folders } = get();
+    const folder = folders.find((f) => f.id === folderId);
+
+    if (!folder) {
+      throw new Error("Folder not found");
+    }
+
+    // Prevent moving a folder into itself or its descendants
+    const isDescendant = (
+      parentId: string | undefined,
+      targetId: string
+    ): boolean => {
+      if (!parentId) return false;
+      if (parentId === targetId) return true;
+      const parent = folders.find((f) => f.id === parentId);
+      return parent ? isDescendant(parent.parentId, targetId) : false;
+    };
+
+    if (newParentId && isDescendant(newParentId, folderId)) {
+      throw new Error("Cannot move folder into itself or its subfolders");
+    }
+
+    const updatedFolder: RapFolder = {
+      ...folder,
+      parentId: newParentId,
+    };
+
+    try {
+      await StorageService.saveFolder(updatedFolder);
+      set((state) => ({
+        folders: state.folders.map((f) =>
+          f.id === folderId ? updatedFolder : f
+        ),
+        error: null,
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to move folder",
+      });
+      throw error;
+    }
+  },
+
+  // Rename a folder
+  renameFolder: async (folderId: string, newName: string) => {
+    const { folders } = get();
+    const folder = folders.find((f) => f.id === folderId);
+
+    if (!folder) {
+      throw new Error("Folder not found");
+    }
+
+    const updatedFolder: RapFolder = {
+      ...folder,
+      name: newName.trim(),
+    };
+
+    try {
+      await StorageService.saveFolder(updatedFolder);
+      set((state) => ({
+        folders: state.folders.map((f) =>
+          f.id === folderId ? updatedFolder : f
+        ),
+        error: null,
+      }));
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to rename folder",
       });
       throw error;
     }
